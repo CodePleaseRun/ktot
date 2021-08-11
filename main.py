@@ -5,10 +5,13 @@ import sys
 import huepy as hp
 
 try:
-    import termios  # for flushing stdin buffer
+    import termios  # flushes stdin buffer (filled with ASCII escape sequence)
     is_linux = True
 except ImportError:
     is_linux = False
+
+label_file_path = './labels.json'
+key_at_index = lambda x, y: list(x.keys())[y]
 
 
 class Logger:
@@ -28,30 +31,34 @@ class Logger:
         return self.stop_time
 
 
-key_at_index = lambda x, y: list(x.keys())[y]
-
-
 def toggle_timer(log, labels) -> None:
+
+    label_name = key_at_index(labels, log.cur_index)
 
     if log.active_label == False:
         log.start()
         log.active_label = True
         print(
-            hp.info(hp.yellow(f'\rLog started for {key_at_index(labels,log.cur_index)}')))
+            hp.info(hp.yellow(f'\rLog started for {label_name}')))
         # print(
         #    hp.info(hp.yellow(f'\rLog started for {labels[log.cur_index]}')))
     else:
         log.stop()
-        elapsed_time = log.stop_time - log.start_time
         log.active_label = False
-        print(f'\rLog ended for {key_at_index(labels,log.cur_index)}')
+
+        elapsed_time = log.stop_time - log.start_time
+        latest_log = (log.start_time, log.stop_time, elapsed_time)
+        labels[label_name].append(latest_log)
+
+        print(f'\rLog ended for {label_name}')
         #print(f'\rLog ended for {labels[log.cur_index]}')
+
         print(f"\r{hp.info((hp.yellow(f'{elapsed_time=}')))}")
 
 
 def load_labels() -> dict:
     try:
-        with open("labels.json", "r", encoding='utf-8') as f:
+        with open(label_file_path, "r", encoding='utf-8') as f:
             labels = json.load(f)
             print('\rLabels loaded successfully')
         if len(labels) == 0:
@@ -59,8 +66,8 @@ def load_labels() -> dict:
             add_label(labels)
             # quit()
 
-    except:
-        print('\rfile labels.json not found')
+    except Exception as e:
+        print(str(e))
         quit()
     return labels
 
@@ -73,6 +80,8 @@ def add_label(labels) -> None:
     new_label.strip()
     labels[new_label] = []  # .append(new_label.strip())
     # labels.sort()
+    with open(label_file_path, 'w', encoding='UTF-8') as f:
+        json.dump(labels, f, indent=4)
     print(f'\rAdded label: {new_label}')
 
 
@@ -101,7 +110,10 @@ def clean_up(log, labels) -> None:
     if log.active_label:
         print('\rDeactivating the label.')
         toggle_timer(log, labels)
-    print(f'\rTracker Deactivated')
+    print(f'\rTracker Deactivated.\nSaving log.')
+    with open(label_file_path, 'w', encoding='UTF-8') as f:
+        json.dump(labels, f, indent=4)
+    print('\rLog Saved.')
 
 
 def main() -> None:
