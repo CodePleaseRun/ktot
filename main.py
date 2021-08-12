@@ -14,7 +14,7 @@ label_file_path = './labels.json'
 key_at_index = lambda x, y: list(x.keys())[y]
 
 
-class Logger:
+class Tracker:
 
     def __init__(self, cur_index=0) -> None:
         self.active_label = False
@@ -38,10 +38,7 @@ def toggle_timer(log, labels) -> None:
     if log.active_label == False:
         log.start()
         log.active_label = True
-        print(
-            hp.info(hp.yellow(f'\rLog started for {label_name}')))
-        # print(
-        #    hp.info(hp.yellow(f'\rLog started for {labels[log.cur_index]}')))
+        print(hp.info(hp.yellow(f'\rLog started for {label_name}')))
     else:
         log.stop()
         log.active_label = False
@@ -51,38 +48,44 @@ def toggle_timer(log, labels) -> None:
         labels[label_name].append(latest_log)
 
         print(f'\rLog ended for {label_name}')
-        #print(f'\rLog ended for {labels[log.cur_index]}')
-
         print(f"\r{hp.info((hp.yellow(f'{elapsed_time=}')))}")
 
 
 def load_labels() -> dict:
+    labels = {}
     try:
         with open(label_file_path, "r", encoding='utf-8') as f:
             labels = json.load(f)
             print('\rLabels loaded successfully')
         if len(labels) == 0:
-            print('\rThere are no labels.')
+            print(f'\r{label_file_path} contains no label.')
             add_label(labels)
-            # quit()
 
-    except Exception as e:
-        print(str(e))
-        quit()
+    except FileNotFoundError:
+        print(f'\r{label_file_path} not found. Creating one.')
+        open(label_file_path, "w", encoding='utf-8').close()
+        add_label(labels)
     return labels
+
+
+def show_labels(log, labels) -> None:
+    print('\rList of all labels:')
+    for key, value in labels.items():
+        print(f"\r{key}, total sessions = {len(value)}")
+    print(f'\rCurrently selected label: {key_at_index(labels, log.cur_index)}')
+    print(f'\rIs active: {log.active_label}')
 
 
 def add_label(labels) -> None:
     #! https://abelbeck.wordpress.com/2013/08/29/clear-sys-stdin-buffer/
     if is_linux:
         termios.tcflush(sys.stdin, termios.TCIFLUSH)
-    new_label = input('\rEnter the new label: ')
-    new_label.strip()
-    labels[new_label] = []  # .append(new_label.strip())
-    # labels.sort()
-    with open(label_file_path, 'w', encoding='UTF-8') as f:
-        json.dump(labels, f, indent=4)
-    print(f'\rAdded label: {new_label}')
+    new_label = input('\rEnter the new label: ').strip()
+    if new_label in labels.keys():
+        print(f'\r{new_label} already exist as a label.')
+    else:
+        labels[new_label] = []
+        print(f'\rAdded label: {new_label}')
 
 
 def toggle_label(log, labels) -> None:
@@ -91,9 +94,7 @@ def toggle_label(log, labels) -> None:
         toggle_timer(log, labels)
 
     log.cur_index = (log.cur_index + 1) % len(labels)
-    #print(f'\rCurrent active label changed to {labels[log.cur_index]}')
-    print(
-        f'\rCurrent active label changed to {key_at_index(labels,log.cur_index)}')
+    print(f'\rActive label changed to {key_at_index(labels,log.cur_index)}')
 
 
 def create_hotkeys(log, labels) -> None:
@@ -101,7 +102,11 @@ def create_hotkeys(log, labels) -> None:
                         suppress=True, trigger_on_release=True)
     keyboard.add_hotkey('ctrl+alt+n', lambda: toggle_label(log, labels),
                         suppress=True, trigger_on_release=True)
+    keyboard.add_hotkey('ctrl+alt+l', lambda: show_labels(log, labels),
+                        suppress=True, trigger_on_release=True)
     keyboard.add_hotkey('ctrl+alt+a', lambda: add_label(labels),
+                        suppress=True, trigger_on_release=True)
+    keyboard.add_hotkey('ctrl+alt+u', lambda: update_label(labels),
                         suppress=True, trigger_on_release=True)
 
 
@@ -116,11 +121,25 @@ def clean_up(log, labels) -> None:
     print('\rLog Saved.')
 
 
+def update_label(labels) -> None:
+    old_label = input('\rEnter old label: ').strip()
+    if old_label in labels.keys():
+        new_label = input('\rEnter new label: ').strip()
+        if new_label in labels.keys():
+            print(f'\rLable "{new_label}" already exist.')
+        else:
+            labels[new_label] = labels.pop(old_label)
+            print(f'\r"{old_label}" updated to "{new_label}".')
+    else:
+        print(f'\r"{old_label}" is not a label.')
+    return 0
+
+
 def main() -> None:
     labels = load_labels()
-    log = Logger()
+    log = Tracker()
     create_hotkeys(log, labels)
-    print('Created Hotkeys')
+    print('\rCreated Hotkeys')
     keyboard.wait('ctrl+alt+e', suppress=True, trigger_on_release=True)
     clean_up(log, labels)
 
