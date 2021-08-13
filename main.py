@@ -1,15 +1,15 @@
 import keyboard
 import time
+import datetime
 import json
 import sys
 from rich import box
 from rich.table import Table
 from rich.padding import Padding
-from rich.console import Console
+from rich.console import Console, Group
 from rich.text import Text
 from rich.panel import Panel
 from rich import print as rprint
-from rich.console import Group
 from rich.traceback import install
 
 
@@ -21,6 +21,9 @@ except ImportError:
 
 label_file_path = './labels.json'
 key_at_index = lambda x, y: list(x.keys())[y]
+print_success = lambda x: Padding(Text(f'\u2714  {x}', style='bold bright_green'), (0, 0, 1, 0))
+console = Console()
+install(show_locals=True)  # fancy taceback
 
 
 class Tracker:
@@ -78,16 +81,19 @@ def toggle_timer(log, labels) -> None:
 def load_labels() -> dict:
     labels = {}
     try:
-        with open(label_file_path, "r", encoding='utf-8') as f:
-            labels = json.load(f)
-            print('\rLabels loaded successfully')
-        if len(labels) == 0:
-            print(f'\r{label_file_path} contains no label.')
-            add_label(labels)
-
+        with console.status("Loading labels...", spinner="bouncingBall"):
+            start_time = time.time()
+            with open(label_file_path, "r", encoding='utf-8') as f:
+                labels = json.load(f)
+            time_taken = round(time.time() - start_time, 3)
+        print('\r\t')  # first thing to get printed
+        rprint(print_success(f'Labels loaded [{time_taken} secs]'))
     except FileNotFoundError:
         print(f'\r{label_file_path} not found. Creating one.')
         open(label_file_path, "w", encoding='utf-8').close()
+        add_label(labels)
+    if len(labels) == 0:
+        print(f'\r{label_file_path} contains no label.')
         add_label(labels)
     return labels
 
@@ -95,9 +101,9 @@ def load_labels() -> dict:
 def show_labels(log, labels) -> None:
 
     table = Table(box=box.ROUNDED)
-    table.add_column(Text("Label Name", style='white'), justify="center", style="bold green3", no_wrap=True)
+    table.add_column(Text("Label Name", style='white'), justify="center", style="bold green3")
 
-    column_add = lambda x: table.add_column(Text(x, style='white'), justify="center", style="bold dark_orange")
+    column_add = lambda x: table.add_column(Text(x), justify="center", style="bold dark_orange")
     column_add('Total Sessions')
     column_add('Total Session Time')
     column_add('Longest Session Time')
@@ -112,19 +118,19 @@ def show_labels(log, labels) -> None:
             total_time = av_time = last_time = longes_time = '00:00:00'
         else:
             elapsed_time = [i[2] for i in value]
-            get_time_str = lambda x: time.strftime('%H:%M:%S', time.gmtime(x))
+            get_time_str = lambda x: str(datetime.timedelta(seconds=round(x)))
             total_time = get_time_str(sum(elapsed_time))
             longes_time = get_time_str(max(elapsed_time))
             av_time = get_time_str(sum(elapsed_time) / sessions)
             last_time = get_time_str(value[-1][2])
 
         table.add_row(name, str(sessions), total_time, longes_time, av_time, last_time)
-
-    s1 = Text.assemble(('Currently selected: ', 'bright_white'), (f"'{key_at_index(labels, log.cur_index)}'", 'bold green3'))
+    label_name = key_at_index(labels, log.cur_index)
+    s1 = Text.assemble(('Currently selected: ', 'bright_white'), (f"'{label_name}'", 'bold green3'))
     s2 = Text.assemble(('Is active: ', 'bright_white'), (f'{log.active_label}', 'italic bold bright_red'))
     table_group = Group(table, s1, s2)  # (s2, fit=True)
     print('\r', end='')
-    rprint(Padding(Panel.fit(table_group, title='Label Statistics', style='bright_white'), (1, 0)))
+    rprint(Padding(Panel.fit(table_group, title='Label Statistics', style='bright_white'), (0, 0, 1, 0)))
 
 
 def add_label(labels) -> None:
@@ -139,19 +145,21 @@ def add_label(labels) -> None:
         print(f'\rAdded label: {new_label}')
 
 
-def toggle_label(log, labels) -> None:
+def toggle_label(log, labels, num) -> None:
     if log.active_label:
         print('\rA label was already active. Stopping it.')
         toggle_timer(log, labels)
 
-    log.cur_index = (log.cur_index + 1) % len(labels)
+    log.cur_index = (log.cur_index + num) % len(labels)
     print(f'\rActive label changed to {key_at_index(labels,log.cur_index)}')
 
 
 def create_hotkeys(log, labels) -> None:
     keyboard.add_hotkey('ctrl+alt+space', lambda: toggle_timer(log, labels),
                         suppress=True, trigger_on_release=True)
-    keyboard.add_hotkey('ctrl+alt+n', lambda: toggle_label(log, labels),
+    keyboard.add_hotkey('ctrl+alt+n', lambda: toggle_label(log, labels, 1),
+                        suppress=True, trigger_on_release=True)
+    keyboard.add_hotkey('ctrl+alt+p', lambda: toggle_label(log, labels, -1),
                         suppress=True, trigger_on_release=True)
     keyboard.add_hotkey('ctrl+alt+l', lambda: show_labels(log, labels),
                         suppress=True, trigger_on_release=True)
@@ -159,6 +167,8 @@ def create_hotkeys(log, labels) -> None:
                         suppress=True, trigger_on_release=True)
     keyboard.add_hotkey('ctrl+alt+u', lambda: update_label(labels),
                         suppress=True, trigger_on_release=True)
+    print('\r', end='')
+    rprint(print_success('Hotkeys Created'))
 
 
 def clean_up(log, labels) -> None:
@@ -166,10 +176,14 @@ def clean_up(log, labels) -> None:
     if log.active_label:
         print('\rDeactivating the label.')
         toggle_timer(log, labels)
-    print(f'\rTracker Deactivated.\nSaving log.')
-    with open(label_file_path, 'w', encoding='UTF-8') as f:
-        json.dump(labels, f, indent=4)
-    print('\rLog Saved.')
+    with console.status("Saving labels...", spinner="bouncingBall"):
+        start_time = time.time()
+        with open(label_file_path, 'w', encoding='UTF-8') as f:
+            json.dump(labels, f, indent=4)
+        time_taken = round(time.time() - start_time, 3)
+    print('\r', end='')
+    rprint(print_success(f'Labels Saved [{time_taken} secs]'))
+    console.rule('[b bright_green]Tracker exited successfully[/]')
 
 
 def update_label(labels) -> None:
@@ -190,7 +204,6 @@ def main() -> None:
     labels = load_labels()
     log = Tracker()
     create_hotkeys(log, labels)
-    print('\rCreated Hotkeys')
     keyboard.wait('ctrl+alt+e', suppress=True, trigger_on_release=True)
     clean_up(log, labels)
 
