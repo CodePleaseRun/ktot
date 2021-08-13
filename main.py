@@ -2,7 +2,16 @@ import keyboard
 import time
 import json
 import sys
-import huepy as hp
+from rich import box
+from rich.table import Table
+from rich.padding import Padding
+from rich.console import Console
+from rich.text import Text
+from rich.panel import Panel
+from rich import print as rprint
+from rich.console import Group
+from rich.traceback import install
+
 
 try:
     import termios  # flushes stdin buffer (filled with ASCII escape sequence)
@@ -38,7 +47,13 @@ def toggle_timer(log, labels) -> None:
     if log.active_label == False:
         log.start()
         log.active_label = True
-        print(hp.info(hp.yellow(f'\rLog started for {label_name}')))
+        log_msg = Text()
+        log_msg.append('Tracking for ', style='bright_green')
+        log_msg.append(f"'{label_name}'", style='pale_turquoise1')
+        log_msg.append(' initiated', style='bright_green')
+        log_msg = Padding(log_msg, (1, 0))
+        print('\r', end='')
+        rprint(Padding(Panel.fit(log_msg, style='bright_green', title='Tracker Update'), (1, 0)))
     else:
         log.stop()
         log.active_label = False
@@ -47,8 +62,17 @@ def toggle_timer(log, labels) -> None:
         latest_log = (log.start_time, log.stop_time, elapsed_time)
         labels[label_name].append(latest_log)
 
-        print(f'\rLog ended for {label_name}')
-        print(f"\r{hp.info((hp.yellow(f'{elapsed_time=}')))}")
+        log_msg = Text()
+        log_msg.append('Tracking for ', style='bright_red')
+        log_msg.append(f"'{label_name}'", style='pale_turquoise1')
+        log_msg.append(' terminated', style='bright_red')
+        elapsed_time = time.strftime('%H:%M:%S', time.gmtime(elapsed_time))
+        session_len = Text(justify='center')
+        session_len.append('Session lasted for ', style='bright_white')
+        session_len.append(f'{elapsed_time}', style='dark_orange')
+        message_group = Padding(Group(log_msg, session_len, fit=True), (1, 0))
+        print('\r', end='')
+        rprint(Padding(Panel.fit(message_group, style='bright_red', title='Tracker Update'), (1, 0)))
 
 
 def load_labels() -> dict:
@@ -69,11 +93,38 @@ def load_labels() -> dict:
 
 
 def show_labels(log, labels) -> None:
-    print('\rList of all labels:')
+
+    table = Table(box=box.ROUNDED)
+    table.add_column(Text("Label Name", style='white'), justify="center", style="bold green3", no_wrap=True)
+
+    column_add = lambda x: table.add_column(Text(x, style='white'), justify="center", style="bold dark_orange")
+    column_add('Total Sessions')
+    column_add('Total Session Time')
+    column_add('Longest Session Time')
+    column_add('Average Session Time')
+    column_add('Latest Session Time')
+
     for key, value in labels.items():
-        print(f"\r{key}, total sessions = {len(value)}")
-    print(f'\rCurrently selected label: {key_at_index(labels, log.cur_index)}')
-    print(f'\rIs active: {log.active_label}')
+
+        name = Padding(key, (0, 0, 1, 0), expand=False)
+        sessions = len(value)
+        if sessions == 0:
+            total_time = av_time = last_time = longes_time = '00:00:00'
+        else:
+            elapsed_time = [i[2] for i in value]
+            get_time_str = lambda x: time.strftime('%H:%M:%S', time.gmtime(x))
+            total_time = get_time_str(sum(elapsed_time))
+            longes_time = get_time_str(max(elapsed_time))
+            av_time = get_time_str(sum(elapsed_time) / sessions)
+            last_time = get_time_str(value[-1][2])
+
+        table.add_row(name, str(sessions), total_time, longes_time, av_time, last_time)
+
+    s1 = Text.assemble(('Currently selected: ', 'bright_white'), (f"'{key_at_index(labels, log.cur_index)}'", 'bold green3'))
+    s2 = Text.assemble(('Is active: ', 'bright_white'), (f'{log.active_label}', 'italic bold bright_red'))
+    table_group = Group(table, s1, s2)  # (s2, fit=True)
+    print('\r', end='')
+    rprint(Padding(Panel.fit(table_group, title='Label Statistics', style='bright_white'), (1, 0)))
 
 
 def add_label(labels) -> None:
