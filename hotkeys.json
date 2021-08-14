@@ -1,0 +1,34 @@
+{
+    "toggle": [
+        "ctrl+alt+space",
+        "Start/Stop tracking the selected label"
+    ],
+    "next_label": [
+        "ctrl+alt+n",
+        "Select previous label"
+    ],
+    "prev_label": [
+        "ctrl+alt+p",
+        "Select next label"
+    ],
+    "label_add": [
+        "ctrl+alt+a",
+        "Add a new label"
+    ],
+    "label_update": [
+        "ctrl+alt+u",
+        "Update name of a existing label"
+    ],
+    "label_stats": [
+        "ctrl+alt+l",
+        "Show label statistics"
+    ],
+    "exit_tracker": [
+        "ctrl+alt+e",
+        "Exit the tracker"
+    ],
+    "show_hotkeys": [
+        "ctrl+alt+h",
+        "Show this table"
+    ]
+}
