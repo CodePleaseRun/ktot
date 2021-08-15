@@ -1,34 +1,42 @@
 {
-    "toggle": [
-        "ctrl+alt+space",
-        "Start/Stop tracking the selected label"
-    ],
-    "next_label": [
-        "ctrl+alt+n",
-        "Select previous label"
-    ],
-    "prev_label": [
-        "ctrl+alt+p",
-        "Select next label"
-    ],
-    "label_add": [
-        "ctrl+alt+a",
-        "Add a new label"
-    ],
-    "label_update": [
-        "ctrl+alt+u",
-        "Update name of a existing label"
-    ],
-    "label_stats": [
-        "ctrl+alt+l",
-        "Show label statistics"
-    ],
-    "exit_tracker": [
-        "ctrl+alt+e",
-        "Exit the tracker"
-    ],
-    "show_hotkeys": [
-        "ctrl+alt+h",
-        "Show this table"
-    ]
+    "toggle": {
+        "win": "ctrl+alt+space",
+        "linux": "<ctrl>+<alt>+<space>",
+        "desc": "Start/Stop tracking the selected label"
+    },
+    "next_label": {
+        "win": "ctrl+alt+n",
+        "linux": "<ctrl>+<alt>+n",
+        "desc": "Select previous label"
+    },
+    "prev_label": {
+        "win": "ctrl+alt+p",
+        "linux": "<ctrl>+<alt>+p",
+        "desc": "Select next label"
+    },
+    "label_add": {
+        "win": "ctrl+alt+a",
+        "linux": "<ctrl>+<alt>+a",
+        "desc": "Add a new label"
+    },
+    "label_update": {
+        "win": "ctrl+alt+u",
+        "linux": "<ctrl>+<alt>+u",
+        "desc": "Update name of a existing label"
+    },
+    "label_stats": {
+        "win": "ctrl+alt+l",
+        "linux": "<ctrl>+<alt>+l",
+        "desc": "Show label statistics"
+    },
+    "exit_tracker": {
+        "win": "ctrl+alt+e",
+        "linux": "<ctrl>+<alt>+e",
+        "desc": "Exit the tracker"
+    },
+    "show_hotkeys": {
+        "win": "ctrl+alt+h",
+        "linux": "<ctrl>+<alt>+h",
+        "desc": "Show this table"
+    }
 }
