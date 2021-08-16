@@ -3,8 +3,9 @@ import time
 
 class Tracker:
 
-    def __init__(self, cur_index=0) -> None:
+    def __init__(self, timestamp, cur_index=0) -> None:
         self.active_label = False
+        self.timestamp = timestamp
         self.cur_index = cur_index
         self.start_time = 0
         self.stop_time = 0

@@ -1,8 +1,8 @@
-import function
+from functions import function, intro
+import click
 import sys
-from tracker import Tracker
+from tracker import tracker
 from rich.traceback import install
-from intro import show_intro
 install(show_locals=True)  # fancy traceback
 
 
@@ -13,10 +13,13 @@ else:
     is_windows = False
 
 
-def main() -> None:
-    log = Tracker()
+@click.command()
+@click.option('--banner', default=True, help='Show intro banner (default=True)')
+@click.option('--timestamp', default=True, help='Save timestamp of each session (default=True)')
+def main(banner, timestamp) -> None:
+    log = tracker.Tracker(timestamp)
     hotkeys = function.load_hotkeys()
-    show_intro(hotkeys)
+    intro.show_intro(hotkeys, banner)
     labels = function.load_labels()
     function.create_hotkeys(log, labels, hotkeys)
     if is_windows:

@@ -21,8 +21,8 @@ else:
     import keyboard
 
 
-label_file_path = './labels.json'
-hotkeys_file_path = './hotkeys.json'
+label_file_path = 'json/labels.json'
+hotkeys_file_path = 'json/hotkeys.json'
 def key_at_index(x, y): return list(x.keys())[y]
 def print_good(x): return f'[b green_yellow][+] {x}[/]'
 def print_info(x): return f'[b orange1][!] {x}[/]'
@@ -136,7 +136,9 @@ def toggle_timer(log, labels) -> None:
         log.stop()
         log.active_label = False
         elapsed_time = log.stop_time - log.start_time
-        latest_log = (log.start_time, log.stop_time, elapsed_time)
+        latest_log = [log.start_time, log.stop_time, elapsed_time]
+        if log.timestamp == False:
+            latest_log[0] = latest_log[1] = -1
         labels[label_name].append(latest_log)
         log_msg = f"[b deep_pink2]Tracking for [b cyan1]'{label_name}'[/] terminated[/]"
         elapsed_time = str(datetime.timedelta(seconds=round(elapsed_time)))
@@ -225,7 +227,7 @@ def show_labels(log, labels) -> None:
         if sessions == 0:
             total_time = av_time = last_time = longes_time = '0:00:00'
         else:
-            elapsed_time = [i[2] for i in value]
+            elapsed_time = [i[-1] for i in value]
             def get_time_str(x): return str(
                 datetime.timedelta(seconds=round(x)))
             total_time = get_time_str(sum(elapsed_time))
