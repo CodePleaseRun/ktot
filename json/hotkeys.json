@@ -19,6 +19,11 @@
         "linux": "<ctrl>+<alt>+a",
         "desc": "Add a new label"
     },
+    "label_del": {
+        "win": "ctrl+alt+d",
+        "linux": "<ctrl>+<alt>+d",
+        "desc": "Delete a label"
+    },
     "label_update": {
         "win": "ctrl+alt+u",
         "linux": "<ctrl>+<alt>+u",

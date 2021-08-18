@@ -11,8 +11,12 @@ linux = ["pynput>=1.7.3"]
 
 def install(packages):
     for package in packages:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", package])
+        try:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package])
+        except subprocess.CalledProcessError:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip3", "install", package])
 
 
 if __name__ == '__main__':
