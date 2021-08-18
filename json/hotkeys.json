@@ -20,14 +20,14 @@
         "desc": "Add a new label"
     },
     "label_del": {
-        "win": "ctrl+alt+d",
-        "linux": "<ctrl>+<alt>+d",
-        "desc": "Delete a label"
+        "win": "ctrl+alt+r",
+        "linux": "<ctrl>+<alt>+r",
+        "desc": "Remove a label"
     },
     "label_update": {
         "win": "ctrl+alt+u",
         "linux": "<ctrl>+<alt>+u",
-        "desc": "Update name of a existing label"
+        "desc": "Update name of an existing label"
     },
     "label_stats": {
         "win": "ctrl+alt+l",

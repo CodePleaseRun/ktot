@@ -9,8 +9,11 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.console import Console
 from rich.padding import Padding
+from rich.traceback import install
 from rich.console import Console, Group
 from rich.prompt import Prompt, Confirm
+
+install(show_locals=True)  # fancy traceback
 
 if sys.platform == 'linux':
     is_linux = True
@@ -62,7 +65,7 @@ def load_labels() -> dict:
         open(label_file_path, "w", encoding='utf-8').close()
         add_label(labels)
     if len(labels) == 0:
-        console_print(print_info(f'[b cyan]{label_file_path}[/] is empty.'))
+        console_print(print_info(f'[b cyan1]{label_file_path}[/] is empty.'))
         add_label(labels)
     return labels
 
@@ -84,7 +87,7 @@ def create_hotkeys_win(log, labels, hotkeys) -> None:
                         suppress=True, trigger_on_release=True)
     keyboard.add_hotkey(label_add, lambda: add_label(labels),
                         suppress=True, trigger_on_release=True)
-    keyboard.add_hotkey(label_del, lambda: delete_label(labels),
+    keyboard.add_hotkey(label_del, lambda: delete_label(log, labels),
                         suppress=True, trigger_on_release=True)
     keyboard.add_hotkey(label_update, lambda: update_label(log, labels),
                         suppress=True, trigger_on_release=True)
@@ -111,7 +114,7 @@ def create_hotkeys_linux(log, labels, hotkeys) -> None:
             next_label: lambda: toggle_label(log, labels, 1),
             prev_label: lambda: toggle_label(log, labels, -1),
             label_add: lambda: add_label(labels),
-            label_del: lambda: delete_label(labels),
+            label_del: lambda: delete_label(log, labels),
             label_update: lambda: update_label(log, labels),
             label_stats: lambda: show_labels(log, labels),
             tracker_exit: lambda: clean_up(log, labels),
@@ -184,8 +187,7 @@ def add_label(labels) -> Union[str, bool]:
     return(new_label, is_added)
 
 
-def delete_label(labels) -> None:
-    #! https://abelbeck.wordpress.com/2013/08/29/clear-sys-stdin-buffer/
+def delete_label(log, labels) -> None:
     if is_linux:
         termios.tcflush(sys.stdin, termios.TCIFLUSH)
     is_added = False
@@ -195,8 +197,18 @@ def delete_label(labels) -> None:
         print('\r', end='')
         final_ask = Confirm.ask(print_ask('Are you sure?'))
         if final_ask == True:
+            if log.active_label:
+                console_print(print_info(
+                    f'Deactivating [b cyan1]{del_label}[/] before deleting'))
+                toggle_timer(log, labels)
             labels.pop(del_label)
             console_print(print_info(f'[b cyan1]{del_label}[/] deleted'))
+            if len(labels) == 0:
+                console_print(print_info(
+                    f'[b cyan1]{label_file_path}[/] is empty.'))
+                add_label(labels)
+            else:
+                toggle_label(log, labels, 0)
         else:
             console_print(print_good(f'[b cyan1]{del_label}[/] stays!'))
     else:
@@ -225,6 +237,9 @@ def update_label(log, labels) -> None:
 
 def show_labels(log, labels) -> None:
 
+    if len(labels) == 0:
+        console_print(print_info(f'[b cyan1]{label_file_path}[/] is empty.'))
+        return
     table = Table(box=box.ROUNDED)
     table.add_column("Label Name", justify="center",
                      style="b green_yellow", no_wrap=True)
