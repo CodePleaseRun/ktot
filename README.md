@@ -82,7 +82,7 @@ The porgram is then controlled using hotkeys from deafult control scheme.
 <br>
 <h2>labels.json</h2>
 
-All the sessions recorded are saved `labels.json` as a single dictionary. Each label is assigned a key whose value is a single list. Each element of list is another list of 3 elements (call it `l1`):
+All the sessions recorded are saved in `labels.json` as a single dictionary. Each label is saved as a key whose value is a single list. Each element of the list is another list of 3 elements (call it `l1`):
 
 ```
 [beginning_timestamp, ending_timestamp, elapsed_time]
@@ -131,3 +131,7 @@ Both packages have different syntax for parsing the same hotkey combination. Thu
 
 - Remapping controls to different hotkeys within the program
 - Moving from json storage to a proper db. For a json file with 15 labels with 40k sessions each, average read and write time was 0.6 and 3.0 secs respectively
+
+<br>
+<h2>Licence</h2>
+ <h3>MIT</h3>
